@@ -1,191 +1,464 @@
 #include <M5StickCPlus2.h>
 #include <WiFi.h>
-#include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <esp_system.h>
 #include "config.h"
+#include "PowerLogger.h"
 
-// Global variables
-String deviceId;
-bool powerState = false;
-bool lastPowerState = false;
-unsigned long lastCheck = 0;
-HTTPClient http;
+// Global instances
+PowerLogger* powerLogger = nullptr;
+DeviceConfig deviceConfig;
+
+// Display management
+unsigned long lastDisplayUpdate = 0;
+bool displayOn = true;
+uint8_t displayBrightness = DISPLAY_BRIGHTNESS;
+
+// Button handling
+unsigned long lastButtonPress = 0;
+const unsigned long BUTTON_DEBOUNCE_MS = 200;
+
+// Status tracking
+SystemStatus currentStatus = SystemStatus::INITIALIZING;
+String statusMessage = "Initializing...";
+uint32_t eventCounter = 0;
+float batteryVoltage = 0.0f;
+uint8_t batteryPercentage = 0;
+bool wifiConnected = false;
+int32_t wifiSignalStrength = 0;
+
+// Forward declarations
+void initializeConfig();
+void initializeDisplay();
+void updateDisplay();
+void handleButtons();
+void onWiFiConnected();
+void onWiFiDisconnected();
+void onHttpSuccess(const String& message);
+void onHttpError(const String& message);
+void onBatteryLow(uint8_t percentage);
+void onSystemError(const String& error);
+void drawStatusScreen();
+void drawInfoScreen();
+void drawErrorScreen(const String& error);
+void showBootScreen();
+void toggleDisplay();
+String getStatusText(SystemStatus status);
+String formatUptime(unsigned long uptimeMs);
 
 void setup() {
-    auto cfg = M5.config();
-    M5.begin(cfg);
+    // Initialize M5StickC Plus2
+    M5.begin();
     
+    // Initialize serial communication
     Serial.begin(115200);
-    delay(1000);
+    while (!Serial && millis() < 3000) {
+        delay(10);
+    }
     
-    // Generate unique device ID
-    generateDeviceId();
+    Serial.println("====================================");
+    Serial.println("M5StickC Plus2 Power Logger v" + String(FIRMWARE_VERSION));
+    Serial.println("Device Model: " + String(DEVICE_MODEL));
+    Serial.println("====================================");
     
     // Initialize display
-    M5.Display.setRotation(1);
-    M5.Display.setTextSize(1);
-    M5.Display.fillScreen(BLACK);
+    initializeDisplay();
+    showBootScreen();
     
-    // Connect to WiFi
-    connectWiFi();
+    // Initialize configuration
+    initializeConfig();
     
-    // Initialize power monitoring
-    initPowerMonitoring();
+    // Create PowerLogger instance
+    powerLogger = new PowerLogger(deviceConfig);
     
-    Serial.println("M5StickC Plus2 Power Logger initialized");
-    Serial.println("Device ID: " + deviceId);
+    // Set up callbacks
+    powerLogger->onWiFiConnected(onWiFiConnected);
+    powerLogger->onWiFiDisconnected(onWiFiDisconnected);
+    powerLogger->onHttpSuccess(onHttpSuccess);
+    powerLogger->onHttpError(onHttpError);
+    powerLogger->onBatteryLow(onBatteryLow);
+    powerLogger->onSystemError(onSystemError);
+    
+    // Initialize PowerLogger
+    if (!powerLogger->begin()) {
+        Serial.println("Failed to initialize PowerLogger");
+        drawErrorScreen("Init Failed");
+        while (true) {
+            delay(1000);
+        }
+    }
+    
+    Serial.println("Setup completed successfully");
+    Serial.println("Device ID: " + powerLogger->getDeviceId());
+    
+    // Initial display update
+    updateDisplay();
 }
 
 void loop() {
+    // Update M5 state
     M5.update();
     
-    if (millis() - lastCheck > POWER_CHECK_INTERVAL) {
-        checkPowerState();
-        lastCheck = millis();
+    // Handle button presses
+    handleButtons();
+    
+    // Run PowerLogger loop
+    if (powerLogger) {
+        powerLogger->loop();
+        
+        // Update status from PowerLogger
+        currentStatus = powerLogger->getSystemStatus();
+        batteryVoltage = powerLogger->getBatteryVoltage();
+        batteryPercentage = powerLogger->getBatteryPercentage();
+        wifiConnected = powerLogger->isWiFiConnected();
     }
     
-    updateDisplay();
-    delay(100);
+    // Update display periodically
+    if (displayOn && (millis() - lastDisplayUpdate >= STATUS_UPDATE_INTERVAL_MS)) {
+        updateDisplay();
+        lastDisplayUpdate = millis();
+    }
+    
+    // Auto-sleep display after timeout
+    if (displayOn && (millis() - lastButtonPress >= DISPLAY_TIMEOUT_MS)) {
+        toggleDisplay();
+    }
+    
+    // Small delay for stability
+    delay(50);
 }
 
-void generateDeviceId() {
-    uint64_t chipid = ESP.getEfuseMac();
-    deviceId = String(DEVICE_ID_PREFIX) + String((uint32_t)(chipid >> 32), HEX);
+void initializeConfig() {
+    // Load configuration from defines
+    deviceConfig.wifiSSID = WIFI_SSID;
+    deviceConfig.wifiPassword = WIFI_PASSWORD;
+    deviceConfig.httpEndpoint = HTTP_ENDPOINT;
+    deviceConfig.httpTimeout = HTTP_TIMEOUT_MS;
+    deviceConfig.httpRetryAttempts = HTTP_RETRY_ATTEMPTS;
+    deviceConfig.httpRetryDelay = HTTP_RETRY_DELAY_MS;
+    deviceConfig.powerCheckInterval = POWER_CHECK_INTERVAL_MS;
+    deviceConfig.batteryLowThreshold = BATTERY_LOW_THRESHOLD;
+    deviceConfig.logLevel = LOG_LEVEL;
+    
+    // Device ID will be generated by PowerLogger if empty
+    deviceConfig.deviceId = "";
+    
+    Serial.println("Configuration initialized");
+    Serial.println("WiFi SSID: " + deviceConfig.wifiSSID);
+    Serial.println("HTTP Endpoint: " + deviceConfig.httpEndpoint);
 }
 
-void connectWiFi() {
-    M5.Display.setCursor(0, 0);
-    M5.Display.print("Connecting WiFi...");
+void initializeDisplay() {
+    M5.Lcd.setRotation(1);
+    M5.Lcd.fillScreen(BLACK);
+    M5.Lcd.setTextColor(WHITE, BLACK);
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setCursor(0, 0);
     
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    // Set initial brightness
+    M5.Axp.ScreenBreath(displayBrightness);
     
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-        delay(1000);
-        M5.Display.print(".");
-        attempts++;
+    Serial.println("Display initialized");
+}
+
+void updateDisplay() {
+    if (!displayOn) return;
+    
+    static uint8_t screenMode = 0;
+    
+    M5.Lcd.fillScreen(BLACK);
+    
+    switch (screenMode) {
+        case 0:
+            drawStatusScreen();
+            break;
+        case 1:
+            drawInfoScreen();
+            break;
+        default:
+            screenMode = 0;
+            drawStatusScreen();
+            break;
     }
     
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("WiFi connected");
-        Serial.println("IP: " + WiFi.localIP().toString());
-        M5.Display.fillScreen(BLACK);
-        M5.Display.setCursor(0, 0);
-        M5.Display.println("WiFi Connected");
-        M5.Display.println("IP: " + WiFi.localIP().toString());
-    } else {
-        Serial.println("WiFi connection failed");
-        M5.Display.fillScreen(BLACK);
-        M5.Display.setCursor(0, 0);
-        M5.Display.println("WiFi Failed");
+    // Switch screen mode every 10 seconds
+    static unsigned long lastModeSwitch = 0;
+    if (millis() - lastModeSwitch >= 10000) {
+        screenMode = (screenMode + 1) % 2;
+        lastModeSwitch = millis();
     }
+}
+
+void handleButtons() {
+    if (M5.BtnA.wasPressed()) {
+        unsigned long now = millis();
+        if (now - lastButtonPress >= BUTTON_DEBOUNCE_MS) {
+            lastButtonPress = now;
+            
+            if (!displayOn) {
+                toggleDisplay();
+            } else {
+                // Manual power event for testing
+                if (powerLogger) {
+                    powerLogger->logPowerEvent(PowerEventType::POWER_ON, "Manual test event");
+                    eventCounter++;
+                    statusMessage = "Test event sent";
+                }
+            }
+        }
+    }
+    
+    if (M5.BtnB.wasPressed()) {
+        unsigned long now = millis();
+        if (now - lastButtonPress >= BUTTON_DEBOUNCE_MS) {
+            lastButtonPress = now;
+            toggleDisplay();
+        }
+    }
+    
+    // Power button (long press for deep sleep)
+    if (M5.BtnPWR.wasPressed()) {
+        unsigned long now = millis();
+        if (now - lastButtonPress >= BUTTON_DEBOUNCE_MS) {
+            lastButtonPress = now;
+            
+            // Check for long press
+            unsigned long pressStart = millis();
+            while (M5.BtnPWR.isPressed() && (millis() - pressStart < 2000)) {
+                delay(10);
+                M5.update();
+            }
+            
+            if (millis() - pressStart >= 2000) {
+                // Long press - enter deep sleep
+                if (powerLogger) {
+                    powerLogger->logPowerEvent(PowerEventType::POWER_OFF, "Manual deep sleep");
+                }
+                
+                M5.Lcd.fillScreen(BLACK);
+                M5.Lcd.setTextColor(WHITE, BLACK);
+                M5.Lcd.setCursor(10, 40);
+                M5.Lcd.println("Going to sleep...");
+                delay(2000);
+                
+                M5.Axp.DeepSleep(DEEP_SLEEP_DURATION_US);
+            }
+        }
+    }
+}
+
+void drawStatusScreen() {
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setTextColor(WHITE, BLACK);
+    
+    // Title
+    M5.Lcd.setCursor(5, 5);
+    M5.Lcd.println("Power Logger v" + String(FIRMWARE_VERSION));
+    
+    // Device ID
+    M5.Lcd.setCursor(5, 20);
+    if (powerLogger) {
+        String deviceId = powerLogger->getDeviceId();
+        if (deviceId.length() > 15) {
+            deviceId = deviceId.substring(0, 15) + "...";
+        }
+        M5.Lcd.println("ID: " + deviceId);
+    }
+    
+    // Status
+    M5.Lcd.setCursor(5, 35);
+    M5.Lcd.setTextColor(currentStatus == SystemStatus::HTTP_SUCCESS ? GREEN : 
+                        currentStatus == SystemStatus::ERROR ? RED : YELLOW, BLACK);
+    M5.Lcd.println("Status: " + getStatusText(currentStatus));
+    
+    // WiFi status
+    M5.Lcd.setCursor(5, 50);
+    M5.Lcd.setTextColor(wifiConnected ? GREEN : RED, BLACK);
+    M5.Lcd.println("WiFi: " + String(wifiConnected ? "Connected" : "Disconnected"));
+    
+    if (wifiConnected) {
+        M5.Lcd.setCursor(5, 65);
+        M5.Lcd.setTextColor(WHITE, BLACK);
+        M5.Lcd.println("RSSI: " + String(WiFi.RSSI()) + " dBm");
+    }
+    
+    // Battery info
+    M5.Lcd.setCursor(5, 80);
+    uint16_t batteryColor = batteryPercentage > 50 ? GREEN :
+                           batteryPercentage > 20 ? YELLOW : RED;
+    M5.Lcd.setTextColor(batteryColor, BLACK);
+    M5.Lcd.println("Battery: " + String(batteryPercentage) + "% (" + 
+                   String(batteryVoltage, 2) + "V)");
+    
+    // Event counter
+    M5.Lcd.setCursor(5, 95);
+    M5.Lcd.setTextColor(WHITE, BLACK);
+    M5.Lcd.println("Events: " + String(eventCounter));
+    
+    // Instructions
+    M5.Lcd.setCursor(5, 115);
+    M5.Lcd.setTextColor(CYAN, BLACK);
+    M5.Lcd.println("A:Test B:Sleep PWR:Deep");
+}
+
+void drawInfoScreen() {
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setTextColor(WHITE, BLACK);
+    
+    // Title
+    M5.Lcd.setCursor(5, 5);
+    M5.Lcd.println("System Information");
+    
+    // Uptime
+    M5.Lcd.setCursor(5, 20);
+    M5.Lcd.println("Uptime: " + formatUptime(millis()));
+    
+    // Memory info
+    M5.Lcd.setCursor(5, 35);
+    M5.Lcd.println("Free Heap: " + String(ESP.getFreeHeap() / 1024) + " KB");
+    
+    // Chip info
+    M5.Lcd.setCursor(5, 50);
+    M5.Lcd.println("Chip Rev: " + String(ESP.getChipRevision()));
+    
+    // Flash info
+    M5.Lcd.setCursor(5, 65);
+    M5.Lcd.println("Flash: " + String(ESP.getFlashChipSize() / 1024 / 1024) + " MB");
+    
+    // CPU frequency
+    M5.Lcd.setCursor(5, 80);
+    M5.Lcd.println("CPU: " + String(ESP.getCpuFreqMHz()) + " MHz");
+    
+    // Temperature (if available)
+    M5.Lcd.setCursor(5, 95);
+    M5.Lcd.println("Temp: " + String(temperatureRead(), 1) + " °C");
+    
+    // Status message
+    if (!statusMessage.isEmpty()) {
+        M5.Lcd.setCursor(5, 115);
+        M5.Lcd.setTextColor(CYAN, BLACK);
+        M5.Lcd.println(statusMessage);
+    }
+}
+
+void drawErrorScreen(const String& error) {
+    M5.Lcd.fillScreen(RED);
+    M5.Lcd.setTextColor(WHITE, RED);
+    M5.Lcd.setTextSize(1);
+    
+    M5.Lcd.setCursor(10, 30);
+    M5.Lcd.println("ERROR");
+    
+    M5.Lcd.setCursor(5, 50);
+    M5.Lcd.println(error);
+    
+    M5.Lcd.setCursor(5, 70);
+    M5.Lcd.println("Check serial output");
+    
+    M5.Lcd.setCursor(5, 90);
+    M5.Lcd.println("Reset to continue");
+}
+
+void showBootScreen() {
+    M5.Lcd.fillScreen(BLUE);
+    M5.Lcd.setTextColor(WHITE, BLUE);
+    M5.Lcd.setTextSize(1);
+    
+    M5.Lcd.setCursor(20, 30);
+    M5.Lcd.println("M5StickC Plus2");
+    
+    M5.Lcd.setCursor(25, 50);
+    M5.Lcd.println("Power Logger");
+    
+    M5.Lcd.setCursor(30, 70);
+    M5.Lcd.println("v" + String(FIRMWARE_VERSION));
+    
+    M5.Lcd.setCursor(25, 100);
+    M5.Lcd.println("Initializing...");
     
     delay(2000);
 }
 
-void initPowerMonitoring() {
-    // Initialize power monitoring
-    float voltage = M5.Power.getBatteryVoltage();
-    powerState = voltage > POWER_ON_THRESHOLD;
-    lastPowerState = powerState;
-    
-    Serial.println("Initial power state: " + String(powerState ? "ON" : "OFF"));
-    Serial.println("Battery voltage: " + String(voltage) + "V");
-}
-
-void checkPowerState() {
-    float voltage = M5.Power.getBatteryVoltage();
-    bool currentPowerState = voltage > POWER_ON_THRESHOLD;
-    
-    // Check for power state change
-    if (currentPowerState != lastPowerState) {
-        powerState = currentPowerState;
-        
-        String event = powerState ? "power_on" : "power_off";
-        Serial.println("Power state changed: " + event);
-        Serial.println("Voltage: " + String(voltage) + "V");
-        
-        // Send HTTP POST
-        sendPowerEvent(event, voltage);
-        
-        lastPowerState = powerState;
+void toggleDisplay() {
+    displayOn = !displayOn;
+    if (displayOn) {
+        M5.Axp.ScreenBreath(displayBrightness);
+        updateDisplay();
+    } else {
+        M5.Axp.ScreenBreath(0);
+        M5.Lcd.fillScreen(BLACK);
     }
 }
 
-void sendPowerEvent(String event, float voltage) {
-    if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("WiFi not connected, cannot send event");
-        return;
+String getStatusText(SystemStatus status) {
+    switch (status) {
+        case SystemStatus::INITIALIZING: return "Init";
+        case SystemStatus::WIFI_CONNECTING: return "WiFi Conn";
+        case SystemStatus::WIFI_CONNECTED: return "WiFi OK";
+        case SystemStatus::WIFI_DISCONNECTED: return "WiFi Disc";
+        case SystemStatus::HTTP_SENDING: return "Sending";
+        case SystemStatus::HTTP_SUCCESS: return "Success";
+        case SystemStatus::HTTP_FAILED: return "HTTP Fail";
+        case SystemStatus::ERROR: return "Error";
+        case SystemStatus::SLEEPING: return "Sleep";
+        default: return "Unknown";
     }
-    
-    http.begin(HTTP_SERVER_URL);
-    http.addHeader("Content-Type", "application/json");
-    http.setTimeout(HTTP_TIMEOUT);
-    
-    // Create JSON payload
-    JsonDocument doc;
-    doc["device_id"] = deviceId;
-    doc["event"] = event;
-    doc["timestamp"] = millis();
-    doc["voltage"] = voltage;
-    doc["ip_address"] = WiFi.localIP().toString();
-    
-    String jsonString;
-    serializeJson(doc, jsonString);
-    
-    Serial.println("Sending: " + jsonString);
-    
-    int httpResponseCode = http.POST(jsonString);
-    
-    if (httpResponseCode > 0) {
-        String response = http.getString();
-        Serial.println("HTTP Response: " + String(httpResponseCode));
-        Serial.println("Response: " + response);
-    } else {
-        Serial.println("HTTP Error: " + String(httpResponseCode));
-    }
-    
-    http.end();
 }
 
-void updateDisplay() {
-    M5.Display.fillScreen(BLACK);
-    M5.Display.setCursor(0, 0);
-    M5.Display.setTextColor(WHITE);
+String formatUptime(unsigned long uptimeMs) {
+    unsigned long seconds = uptimeMs / 1000;
+    unsigned long minutes = seconds / 60;
+    unsigned long hours = minutes / 60;
+    unsigned long days = hours / 24;
     
-    // Device info
-    M5.Display.println("Power Logger");
-    M5.Display.println("ID: " + deviceId);
-    M5.Display.println("");
-    
-    // WiFi status
-    if (WiFi.status() == WL_CONNECTED) {
-        M5.Display.setTextColor(GREEN);
-        M5.Display.println("WiFi: Connected");
-        M5.Display.setTextColor(WHITE);
-        M5.Display.println("IP: " + WiFi.localIP().toString());
+    if (days > 0) {
+        return String(days) + "d " + String(hours % 24) + "h";
+    } else if (hours > 0) {
+        return String(hours) + "h " + String(minutes % 60) + "m";
+    } else if (minutes > 0) {
+        return String(minutes) + "m " + String(seconds % 60) + "s";
     } else {
-        M5.Display.setTextColor(RED);
-        M5.Display.println("WiFi: Disconnected");
-        M5.Display.setTextColor(WHITE);
+        return String(seconds) + "s";
     }
+}
+
+// Callback implementations
+void onWiFiConnected() {
+    statusMessage = "WiFi Connected";
+    Serial.println("WiFi connection established");
+}
+
+void onWiFiDisconnected() {
+    statusMessage = "WiFi Disconnected";
+    Serial.println("WiFi connection lost");
+}
+
+void onHttpSuccess(const String& message) {
+    statusMessage = "Event Sent OK";
+    eventCounter++;
+    Serial.println("HTTP Success: " + message);
+}
+
+void onHttpError(const String& message) {
+    statusMessage = "Send Failed";
+    Serial.println("HTTP Error: " + message);
+}
+
+void onBatteryLow(uint8_t percentage) {
+    statusMessage = "Battery Low: " + String(percentage) + "%";
+    Serial.println("Battery low warning: " + String(percentage) + "%");
     
-    M5.Display.println("");
-    
-    // Power status
-    float voltage = M5.Power.getBatteryVoltage();
-    M5.Display.println("Battery: " + String(voltage, 2) + "V");
-    
-    if (powerState) {
-        M5.Display.setTextColor(GREEN);
-        M5.Display.println("Power: ON");
-    } else {
-        M5.Display.setTextColor(RED);
-        M5.Display.println("Power: OFF");
+    // Flash display to alert user
+    for (int i = 0; i < 3; i++) {
+        M5.Lcd.fillScreen(RED);
+        delay(200);
+        M5.Lcd.fillScreen(BLACK);
+        delay(200);
     }
-    
-    M5.Display.setTextColor(WHITE);
-    M5.Display.println("");
-    M5.Display.println("Uptime: " + String(millis() / 1000) + "s");
+}
+
+void onSystemError(const String& error) {
+    statusMessage = "System Error";
+    Serial.println("System Error: " + error);
+    drawErrorScreen(error);
+    delay(5000);
 }
