@@ -42,3 +42,23 @@ jobs:
     
     - name: Run Check
       run: pio check --verbose
+    
+    - name: Run Tests
+      run: pio test
+
+  claude-code-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Claude Code Review
+      uses: anthropics/claude-code-review-action@v1
+      with:
+        anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        review_level: 'detailed'
+        focus_areas: 'security,performance,best-practices'
