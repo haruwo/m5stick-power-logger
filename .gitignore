@@ -1,0 +1,45 @@
+# PlatformIO
+.pio/
+.vscode/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+
+# Build directories
+build/
+lib_deps/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+*~
+.idea/
+
+# Environment and config files with sensitive data
+src/config_local.h
+include/config_local.h
+secrets.h
+credentials.h
+
+# Test coverage
+coverage/
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Firmware files
+*.bin
+*.hex
+*.elf
+*.map
