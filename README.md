@@ -1,90 +1,124 @@
 # M5StickC Plus2 Power Logger
 
-A professional power monitoring solution for M5StickC Plus2 devices that tracks power state changes and reports them via HTTP to a local network endpoint.
+プロフェッショナルレベルの時系列データ監視システム。M5StickC Plus2デバイスからの電源イベントを収集・可視化します。
 
-## Features
+## 特徴
 
-- **Power State Monitoring**: Continuously monitors battery voltage to detect power on/off events
-- **WiFi Connectivity**: Connects to local WiFi network for data transmission
-- **HTTP Reporting**: Sends power events to configurable HTTP endpoint via POST requests
-- **Device Identification**: Each device has a unique ID for multi-device deployments
-- **Real-time Display**: Shows current status, WiFi connection, and power state on device screen
-- **Professional Logging**: Comprehensive serial output for debugging and monitoring
+- **時系列データ収集**: M5StickC Plus2からのリアルタイム電源イベント監視
+- **プロフェッショナルなWebインターフェース**: React製の洗練されたダッシュボード
+- **カレンダー・タイムライン表示**: 直感的なデータ可視化
+- **Docker Compose**: 簡単なデプロイメントと管理
+- **データ永続化**: PostgreSQLによる安全なデータ保存
+- **RESTful API**: 拡張可能なバックエンドアーキテクチャ
 
-## Hardware Requirements
+## システム構成
 
-- M5StickC Plus2 device
-- WiFi network access
-- HTTP server endpoint for receiving power events
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   M5StickC      │───▶│   Backend       │───▶│   PostgreSQL    │
+│   Plus2         │    │   (Node.js)     │    │   Database      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │
+                                ▼
+┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │◄───│     Nginx       │
+│   (React)       │    │   Reverse Proxy │
+└─────────────────┘    └─────────────────┘
+```
 
-## Configuration
+## クイックスタート
 
-Edit `include/config.h` to configure:
+### 前提条件
+
+- Docker & Docker Compose
+- M5StickC Plus2デバイス
+
+### 1. システム起動
+
+```bash
+# Docker Composeでシステム起動
+docker-compose up -d
+
+# ログの確認
+docker-compose logs -f
+```
+
+### 2. アクセス
+
+- **フロントエンド**: http://localhost:3001
+- **バックエンドAPI**: http://localhost:3000
+- **ヘルスチェック**: http://localhost:3000/health
+
+### 3. M5StickCの設定
+
+1. `include/config_local.h`を作成:
 
 ```cpp
-// WiFi settings
-#define WIFI_SSID "YOUR_WIFI_SSID"
-#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#ifndef CONFIG_LOCAL_H
+#define CONFIG_LOCAL_H
 
-// HTTP endpoint
-#define HTTP_SERVER_URL "http://192.168.1.100:8080/api/power-events"
+// WiFi設定
+#define WIFI_SSID "your-wifi-ssid"
+#define WIFI_PASSWORD "your-wifi-password"
 
-// Power thresholds (in volts)
-#define POWER_ON_THRESHOLD 4.0
-#define POWER_OFF_THRESHOLD 3.5
+// HTTP エンドポイント
+#define HTTP_ENDPOINT "http://localhost:3000/api/power-events"
+
+#endif
 ```
 
-## HTTP API
+2. デバイスにアップロードしてテスト
 
-The device sends POST requests to the configured endpoint with the following JSON payload:
+## API エンドポイント
 
-```json
-{
-  "device_id": "M5STICK_ABC123",
-  "event": "power_on", // or "power_off"
-  "timestamp": 1234567890,
-  "voltage": 4.12,
-  "ip_address": "192.168.1.101"
-}
+### 電源イベント
+
+```http
+POST /api/power-events
+GET /api/power-events
+GET /api/power-events/:id
+GET /api/power-events/device/:deviceId/timeline
 ```
 
-## Building and Flashing
+### デバイス管理
 
-1. Install PlatformIO
-2. Clone this repository
-3. Configure WiFi and HTTP settings in `include/config.h`
-4. Build and upload:
+```http
+GET /api/devices
+GET /api/devices/:deviceId
+PUT /api/devices/:deviceId
+DELETE /api/devices/:deviceId
+```
+
+### 分析・統計
+
+```http
+GET /api/analytics/summary
+GET /api/analytics/calendar/:year/:month
+GET /api/analytics/timeline
+GET /api/analytics/device/:deviceId/health
+```
+
+## 開発環境セットアップ
+
+### バックエンド開発
 
 ```bash
-pio run --target upload
+cd backend
+npm install
+npm run dev
 ```
 
-## Monitoring
-
-Connect to serial monitor to view detailed logs:
+### フロントエンド開発
 
 ```bash
-pio device monitor
+cd frontend
+npm install
+npm start
 ```
 
-## Device Display
+### データベース
 
-The device screen shows:
-- Device ID
-- WiFi connection status and IP address
-- Current battery voltage
-- Power state (ON/OFF)
-- Uptime counter
-
-## Multi-Device Deployment
-
-Each device automatically generates a unique ID based on its MAC address, allowing multiple devices to operate on the same network without conflicts.
-
-## Technical Specifications
-
-- **Platform**: ESP32 (M5StickC Plus2)
-- **Framework**: Arduino
-- **Dependencies**: M5StickCPlus2, ArduinoJson, WiFi
-- **Power Check Interval**: 1 second
-- **HTTP Timeout**: 10 seconds
-- **Serial Baud Rate**: 115200
+```bash
+# PostgreSQL接続
+docker exec -it m5stick-postgres psql -U power_logger_user -d power_logger
+```

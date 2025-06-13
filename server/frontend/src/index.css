@@ -1,0 +1,186 @@
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.error-message {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  border-left: 4px solid #d32f2f;
+}
+
+.success-message {
+  color: #2e7d32;
+  background-color: #e8f5e8;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  border-left: 4px solid #2e7d32;
+}
+
+.chart-container {
+  height: 300px;
+  width: 100%;
+}
+
+.calendar-container .react-calendar {
+  width: 100%;
+  border: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.calendar-container .react-calendar__tile {
+  position: relative;
+  padding: 8px 4px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.calendar-container .react-calendar__tile--active {
+  background: #1976d2;
+  color: white;
+}
+
+.calendar-container .react-calendar__tile--now {
+  background: #ffecb3;
+}
+
+.event-indicator {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+}
+
+.event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.event-dot.power-on {
+  background-color: #4caf50;
+}
+
+.event-dot.power-off {
+  background-color: #f44336;
+}
+
+.event-dot.battery-low {
+  background-color: #ff9800;
+}
+
+.event-dot.system-error {
+  background-color: #9c27b0;
+}
+
+.timeline-container {
+  height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+}
+
+.timeline-event {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timeline-event:last-child {
+  border-bottom: none;
+}
+
+.timeline-event-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+
+.timeline-event-icon.power-on {
+  background-color: #4caf50;
+}
+
+.timeline-event-icon.power-off {
+  background-color: #f44336;
+}
+
+.timeline-event-icon.battery-low {
+  background-color: #ff9800;
+}
+
+.timeline-event-icon.system-error {
+  background-color: #9c27b0;
+}
+
+.device-status-online {
+  color: #4caf50;
+}
+
+.device-status-offline {
+  color: #f44336;
+}
+
+.battery-level-high {
+  color: #4caf50;
+}
+
+.battery-level-medium {
+  color: #ff9800;
+}
+
+.battery-level-low {
+  color: #f44336;
+}
+
+@media (max-width: 768px) {
+  .chart-container {
+    height: 250px;
+  }
+  
+  .calendar-container .react-calendar__tile {
+    min-height: 50px;
+    font-size: 14px;
+  }
+  
+  .timeline-container {
+    height: 300px;
+  }
+}
