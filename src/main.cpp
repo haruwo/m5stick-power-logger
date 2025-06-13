@@ -155,7 +155,7 @@ void initializeDisplay() {
     M5.Lcd.setCursor(0, 0);
     
     // Set initial brightness
-    M5.Axp.ScreenBreath(displayBrightness);
+    M5.Display.setBrightness(displayBrightness);
     
     Serial.println("Display initialized");
 }
@@ -240,7 +240,7 @@ void handleButtons() {
                 M5.Lcd.println("Going to sleep...");
                 delay(2000);
                 
-                M5.Axp.DeepSleep(DEEP_SLEEP_DURATION_US);
+                ESP.deepSleep(DEEP_SLEEP_DURATION_US);
             }
         }
     }
@@ -381,10 +381,10 @@ void showBootScreen() {
 void toggleDisplay() {
     displayOn = !displayOn;
     if (displayOn) {
-        M5.Axp.ScreenBreath(displayBrightness);
+        M5.Display.setBrightness(displayBrightness);
         updateDisplay();
     } else {
-        M5.Axp.ScreenBreath(0);
+        M5.Display.setBrightness(0);
         M5.Lcd.fillScreen(BLACK);
     }
 }
