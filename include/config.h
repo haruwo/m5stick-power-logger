@@ -2,19 +2,19 @@
 #define CONFIG_H
 
 #include <Arduino.h>
+#include "config_local.h"
 
 // Device Configuration
 #define DEVICE_MODEL "M5StickCPlus2"
 #define FIRMWARE_VERSION "1.0.0"
 
 // WiFi Configuration
-#define WIFI_SSID "YOUR_WIFI_SSID"
-#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+// WiFi credentials are now defined in local.h
 #define WIFI_TIMEOUT_MS 10000
 #define WIFI_RETRY_DELAY_MS 5000
 
 // HTTP Configuration
-#define HTTP_ENDPOINT "http://192.168.1.100:8080/api/power-events"
+// HTTP endpoint is now defined in local.h
 #define HTTP_TIMEOUT_MS 5000
 #define HTTP_RETRY_ATTEMPTS 3
 #define HTTP_RETRY_DELAY_MS 2000

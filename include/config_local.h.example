@@ -1,0 +1,13 @@
+#ifndef CONFIG_LOCAL_H
+#define CONFIG_LOCAL_H
+
+// WiFi Configuration
+// Replace with your actual WiFi credentials
+#define WIFI_SSID "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+
+// HTTP Configuration
+// Replace with your actual server endpoint
+#define HTTP_ENDPOINT "http://192.168.1.100:8080/api/power-events"
+
+#endif // CONFIG_LOCAL_H
