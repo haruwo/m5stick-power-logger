@@ -20,6 +20,8 @@ const unsigned long BUTTON_DEBOUNCE_MS = 200;
 // Status tracking
 SystemStatus currentStatus = SystemStatus::INITIALIZING;
 String statusMessage = "Initializing...";
+String lastErrorMessage = "";
+unsigned long lastErrorTime = 0;
 uint32_t eventCounter = 0;
 float batteryVoltage = 0.0f;
 uint8_t batteryPercentage = 0;
@@ -40,6 +42,7 @@ void onSystemError(const String& error);
 void drawStatusScreen();
 void drawInfoScreen();
 void drawErrorScreen(const String& error);
+void drawLastErrorInfo();
 void showBootScreen();
 void toggleDisplay();
 String getStatusText(SystemStatus status);
@@ -174,6 +177,14 @@ void updateDisplay() {
         case 1:
             drawInfoScreen();
             break;
+        case 2:
+            if (!lastErrorMessage.isEmpty()) {
+                drawLastErrorInfo();
+            } else {
+                screenMode = 0;
+                drawStatusScreen();
+            }
+            break;
         default:
             screenMode = 0;
             drawStatusScreen();
@@ -183,7 +194,8 @@ void updateDisplay() {
     // Switch screen mode every 10 seconds
     static unsigned long lastModeSwitch = 0;
     if (millis() - lastModeSwitch >= 10000) {
-        screenMode = (screenMode + 1) % 2;
+        int maxScreens = lastErrorMessage.isEmpty() ? 2 : 3;
+        screenMode = (screenMode + 1) % maxScreens;
         lastModeSwitch = millis();
     }
 }
@@ -197,11 +209,25 @@ void handleButtons() {
             if (!displayOn) {
                 toggleDisplay();
             } else {
-                // Manual power event for testing
-                if (powerLogger) {
-                    powerLogger->logPowerEvent(PowerEventType::POWER_ON, "Manual test event");
-                    eventCounter++;
-                    statusMessage = "Test event sent";
+                // Check for long press to clear error
+                unsigned long pressStart = millis();
+                while (M5.BtnA.isPressed() && (millis() - pressStart < 2000)) {
+                    delay(10);
+                    M5.update();
+                }
+                
+                if (millis() - pressStart >= 2000) {
+                    // Long press - clear error
+                    lastErrorMessage = "";
+                    lastErrorTime = 0;
+                    statusMessage = "Error cleared";
+                } else {
+                    // Short press - manual power event for testing
+                    if (powerLogger) {
+                        powerLogger->logPowerEvent(PowerEventType::POWER_ON, "Manual test event");
+                        eventCounter++;
+                        statusMessage = "Test event sent";
+                    }
                 }
             }
         }
@@ -358,6 +384,57 @@ void drawErrorScreen(const String& error) {
     M5.Lcd.println("Reset to continue");
 }
 
+void drawLastErrorInfo() {
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setTextColor(WHITE, BLACK);
+    
+    // Title
+    M5.Lcd.setCursor(5, 5);
+    M5.Lcd.setTextColor(RED, BLACK);
+    M5.Lcd.println("Last Error");
+    
+    // Error time
+    M5.Lcd.setCursor(5, 20);
+    M5.Lcd.setTextColor(WHITE, BLACK);
+    unsigned long errorAge = (millis() - lastErrorTime) / 1000;
+    M5.Lcd.println("Time: " + String(errorAge) + "s ago");
+    
+    // Error message (word wrap for long messages)
+    M5.Lcd.setCursor(5, 35);
+    M5.Lcd.setTextColor(YELLOW, BLACK);
+    
+    String errorMsg = lastErrorMessage;
+    int lineHeight = 15;
+    int currentY = 35;
+    int maxWidth = 18; // Characters per line
+    
+    while (errorMsg.length() > 0 && currentY < 100) {
+        String line;
+        if (errorMsg.length() <= maxWidth) {
+            line = errorMsg;
+            errorMsg = "";
+        } else {
+            int spacePos = errorMsg.lastIndexOf(' ', maxWidth);
+            if (spacePos > 0) {
+                line = errorMsg.substring(0, spacePos);
+                errorMsg = errorMsg.substring(spacePos + 1);
+            } else {
+                line = errorMsg.substring(0, maxWidth);
+                errorMsg = errorMsg.substring(maxWidth);
+            }
+        }
+        
+        M5.Lcd.setCursor(5, currentY);
+        M5.Lcd.println(line);
+        currentY += lineHeight;
+    }
+    
+    // Clear error instruction
+    M5.Lcd.setCursor(5, 115);
+    M5.Lcd.setTextColor(CYAN, BLACK);
+    M5.Lcd.println("Hold A to clear error");
+}
+
 void showBootScreen() {
     M5.Lcd.fillScreen(BLUE);
     M5.Lcd.setTextColor(WHITE, BLUE);
@@ -440,6 +517,8 @@ void onHttpSuccess(const String& message) {
 
 void onHttpError(const String& message) {
     statusMessage = "Send Failed";
+    lastErrorMessage = "HTTP Error: " + message;
+    lastErrorTime = millis();
     Serial.println("HTTP Error: " + message);
 }
 
@@ -458,6 +537,8 @@ void onBatteryLow(uint8_t percentage) {
 
 void onSystemError(const String& error) {
     statusMessage = "System Error";
+    lastErrorMessage = "System Error: " + error;
+    lastErrorTime = millis();
     Serial.println("System Error: " + error);
     drawErrorScreen(error);
     delay(5000);
