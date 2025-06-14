@@ -48,13 +48,14 @@ func TestCreatePowerEvent(t *testing.T) {
 	data, err := json.Marshal(dataJSON)
 	assert.NoError(t, err)
 
-	mock.ExpectExec("INSERT INTO power_events").
-		WithArgs(req.DeviceID, req.EventType, string(data), sqlmock.AnyArg()).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	// デバイスの最終接続時刻を更新
+	// デバイスの最終接続時刻を更新（UPSERT）
 	mock.ExpectExec("INSERT INTO devices").
 		WithArgs(req.DeviceID, req.DeviceID, "", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	// 電源イベントを挿入
+	mock.ExpectExec("INSERT INTO power_events").
+		WithArgs(req.DeviceID, req.EventType, string(data), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	// ハンドラー作成
