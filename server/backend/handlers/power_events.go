@@ -3,6 +3,7 @@ package handlers
 import (
 	"backend/models"
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,10 +26,27 @@ func (h *PowerEventHandler) CreatePowerEvent(c *gin.Context) {
 		return
 	}
 
-	// 電源イベントを挿入
-	_, err := h.db.Exec(
+	// Create data JSON from the request fields
+	dataJSON := map[string]interface{}{
+		"client_timestamp":     req.Timestamp,
+		"uptime_ms":            req.UptimeMs,
+		"message":              req.Message,
+		"battery_percentage":   req.BatteryPercentage,
+		"battery_voltage":      req.BatteryVoltage,
+		"wifi_signal_strength": req.WiFiSignalStrength,
+		"free_heap":            req.FreeHeap,
+	}
+
+	dataBytes, err := json.Marshal(dataJSON)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal data JSON"})
+		return
+	}
+
+	// 電源イベントを挿入 (Use server timestamp)
+	_, err = h.db.Exec(
 		"INSERT INTO power_events (device_id, event_type, data, timestamp) VALUES ($1, $2, $3, $4)",
-		req.DeviceID, req.EventType, req.Data, time.Now(),
+		req.DeviceID, req.EventType, string(dataBytes), time.Now(),
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create power event"})
