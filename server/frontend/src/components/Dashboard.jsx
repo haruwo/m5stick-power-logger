@@ -7,6 +7,7 @@ function Dashboard() {
     eventCount: 0,
     recentEvents: []
   });
+  const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -20,14 +21,15 @@ function Dashboard() {
       
       // デバイス数を取得
       const devicesResponse = await fetch('/api/devices');
-      const devices = devicesResponse.ok ? await devicesResponse.json() : [];
+      const devicesData = devicesResponse.ok ? await devicesResponse.json() : [];
+      setDevices(devicesData);
       
       // 電源イベント数を取得
       const eventsResponse = await fetch('/api/power-events');
       const events = eventsResponse.ok ? await eventsResponse.json() : [];
       
       setStats({
-        deviceCount: devices.length,
+        deviceCount: devicesData.length,
         eventCount: events.length,
         recentEvents: events.slice(0, 5) // 最新5件
       });
@@ -43,9 +45,16 @@ function Dashboard() {
       'power_on': '電源ON',
       'power_off': '電源OFF',
       'battery_low': 'バッテリー低下',
-      'system_error': 'システムエラー'
+      'system_error': 'システムエラー',
+      'wifi_reconnected': 'WiFi再接続',
+      'periodic_status': 'ステータス更新'
     };
     return labels[eventType] || eventType;
+  };
+
+  const getDeviceName = (deviceId) => {
+    const device = devices.find(d => d.id === deviceId);
+    return device ? device.name : deviceId;
   };
 
   if (loading) return <div className="loading">Loading dashboard...</div>;
@@ -98,8 +107,10 @@ function Dashboard() {
                 </div>
                 <div className="event-device">
                   <Link to={`/devices/${event.device_id}`}>
-                    {event.device_id}
+                    {getDeviceName(event.device_id)}
                   </Link>
+                  <br />
+                  <small><code>{event.device_id}</code></small>
                 </div>
                 <div className="event-time">
                   <time dateTime={event.timestamp}>

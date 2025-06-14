@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 
 function PowerEventList() {
   const [events, setEvents] = useState([]);
+  const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchEvents();
+    fetchDevices();
   }, []);
 
   const fetchEvents = async () => {
@@ -24,6 +26,23 @@ function PowerEventList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchDevices = async () => {
+    try {
+      const response = await fetch('/api/devices');
+      if (response.ok) {
+        const data = await response.json();
+        setDevices(data || []);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch devices:', err);
+    }
+  };
+
+  const getDeviceName = (deviceId) => {
+    const device = devices.find(d => d.id === deviceId);
+    return device ? device.name : deviceId;
   };
 
   const getEventTypeLabel = (eventType) => {
@@ -126,8 +145,10 @@ function PowerEventList() {
                   </td>
                   <td>
                     <Link to={`/devices/${event.device_id}`} className="device-link">
-                      <code>{event.device_id}</code>
+                      {getDeviceName(event.device_id)}
                     </Link>
+                    <br />
+                    <small><code>{event.device_id}</code></small>
                   </td>
                   <td>
                     <time dateTime={event.timestamp}>

@@ -107,7 +107,8 @@ function DeviceTimeline() {
         <h2>Power Event Timeline</h2>
         {device && (
           <p className="device-info">
-            Device: <code>{device.id}</code> ({device.name})
+            Device: <strong>{device.name}</strong><br />
+            <small><code>{device.id}</code></small>
           </p>
         )}
       </div>
