@@ -50,12 +50,28 @@ function PowerEventList() {
     if (!data) return '-';
     try {
       const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-      const entries = Object.entries(parsed);
-      if (entries.length === 0) return '-';
       
-      return entries.slice(0, 3).map(([key, value]) => (
-        `${key}: ${value}`
-      )).join(', ') + (entries.length > 3 ? '...' : '');
+      // Display key metrics first
+      const keyFields = ['battery_percentage', 'battery_voltage', 'message'];
+      const displayItems = [];
+      
+      keyFields.forEach(field => {
+        if (parsed[field] !== undefined) {
+          let value = parsed[field];
+          if (field === 'battery_percentage') value += '%';
+          if (field === 'battery_voltage') value += 'V';
+          displayItems.push(`${field.replace('_', ' ')}: ${value}`);
+        }
+      });
+      
+      if (displayItems.length === 0) {
+        const entries = Object.entries(parsed);
+        return entries.slice(0, 3).map(([key, value]) => (
+          `${key}: ${value}`
+        )).join(', ') + (entries.length > 3 ? '...' : '');
+      }
+      
+      return displayItems.join(', ');
     } catch (err) {
       return String(data).substring(0, 50) + (String(data).length > 50 ? '...' : '');
     }

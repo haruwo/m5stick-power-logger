@@ -64,12 +64,25 @@ function DeviceTimeline() {
   const formatEventData = (data) => {
     try {
       const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-      return Object.entries(parsed).map(([key, value]) => (
-        <div key={key} className="data-item">
-          <span className="data-key">{key}:</span>
-          <span className="data-value">{value}</span>
-        </div>
-      ));
+      return Object.entries(parsed).map(([key, value]) => {
+        let displayValue = value;
+        let displayKey = key.replace(/_/g, ' ');
+        
+        // Format specific fields
+        if (key === 'battery_percentage') displayValue += '%';
+        if (key === 'battery_voltage') displayValue += 'V';
+        if (key === 'wifi_signal_strength') displayValue += 'dBm';
+        if (key === 'uptime_ms') displayValue = Math.round(value / 1000) + 's';
+        if (key === 'free_heap') displayValue = Math.round(value / 1024) + 'KB';
+        if (key === 'client_timestamp') displayValue = new Date(value).toLocaleString();
+        
+        return (
+          <div key={key} className="data-item">
+            <span className="data-key">{displayKey}:</span>
+            <span className="data-value">{displayValue}</span>
+          </div>
+        );
+      });
     } catch (err) {
       return <span className="data-raw">{data}</span>;
     }
