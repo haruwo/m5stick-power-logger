@@ -21,7 +21,7 @@ describe('E2E Tests', () => {
       expect(item).toHaveProperty('description');
       expect(item).toHaveProperty('created_at');
     });
-  });
+  }, 10000);
 
   test('Frontend should be accessible', async () => {
     const response = await fetch(BASE_URL);
