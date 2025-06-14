@@ -1,0 +1,53 @@
+.App {
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+}
+
+.App-header h1 {
+  margin: 0;
+}
+
+main {
+  padding: 20px;
+}
+
+.items-table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  width: 80%;
+  max-width: 800px;
+}
+
+.items-table th,
+.items-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+}
+
+.items-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.items-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.loading,
+.error {
+  padding: 20px;
+  font-size: 18px;
+}
+
+.error {
+  color: red;
+}
