@@ -91,7 +91,8 @@ void setup()
         drawErrorScreen("Init Failed");
         while (true)
         {
-            delay(1000);
+            delay(5000);
+            ESP.restart();
         }
     }
 
