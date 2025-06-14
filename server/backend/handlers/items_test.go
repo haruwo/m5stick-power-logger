@@ -2,7 +2,6 @@ package handlers
 
 import (
     "backend/models"
-    "database/sql"
     "encoding/json"
     "net/http"
     "net/http/httptest"
