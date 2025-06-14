@@ -52,6 +52,8 @@ func main() {
         api.GET("/power-events", powerEventHandler.GetPowerEvents)
         api.GET("/power-events/:id", powerEventHandler.GetPowerEventByID)
         api.GET("/power-events/device/:deviceId/timeline", powerEventHandler.GetDeviceTimeline)
+        api.GET("/power-events/stats", powerEventHandler.GetEventStats)
+        api.DELETE("/power-events/cleanup", powerEventHandler.DeleteOldEvents)
 
         // Device Management API
         api.GET("/devices", deviceHandler.GetDevices)

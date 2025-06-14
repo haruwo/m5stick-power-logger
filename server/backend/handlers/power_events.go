@@ -138,3 +138,94 @@ func (h *PowerEventHandler) GetDeviceTimeline(c *gin.Context) {
 
 	c.JSON(http.StatusOK, events)
 }
+
+func (h *PowerEventHandler) DeleteOldEvents(c *gin.Context) {
+	var req struct {
+		OlderThanDays int `json:"older_than_days" binding:"required,min=1"`
+	}
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Calculate the cutoff date
+	cutoffDate := time.Now().AddDate(0, 0, -req.OlderThanDays)
+	
+	// First, get the count of events to be deleted
+	var count int
+	err := h.db.QueryRow("SELECT COUNT(*) FROM power_events WHERE timestamp < $1", cutoffDate).Scan(&count)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count events to delete"})
+		return
+	}
+	
+	// Delete the old events
+	result, err := h.db.Exec("DELETE FROM power_events WHERE timestamp < $1", cutoffDate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete old events"})
+		return
+	}
+	
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get affected rows count"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Old events deleted successfully",
+		"deleted_count": rowsAffected,
+		"cutoff_date": cutoffDate.Format("2006-01-02 15:04:05"),
+	})
+}
+
+func (h *PowerEventHandler) GetEventStats(c *gin.Context) {
+	// Get total event count
+	var totalCount int
+	err := h.db.QueryRow("SELECT COUNT(*) FROM power_events").Scan(&totalCount)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get total event count"})
+		return
+	}
+	
+	// Get oldest event timestamp
+	var oldestTimestamp *time.Time
+	err = h.db.QueryRow("SELECT MIN(timestamp) FROM power_events").Scan(&oldestTimestamp)
+	if err != nil && err != sql.ErrNoRows {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get oldest event timestamp"})
+		return
+	}
+	
+	// Get newest event timestamp  
+	var newestTimestamp *time.Time
+	err = h.db.QueryRow("SELECT MAX(timestamp) FROM power_events").Scan(&newestTimestamp)
+	if err != nil && err != sql.ErrNoRows {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get newest event timestamp"})
+		return
+	}
+	
+	// Get event counts by age
+	var countLast7Days, countLast30Days, countLast90Days int
+	
+	now := time.Now()
+	cutoff7Days := now.AddDate(0, 0, -7)
+	cutoff30Days := now.AddDate(0, 0, -30)
+	cutoff90Days := now.AddDate(0, 0, -90)
+	
+	h.db.QueryRow("SELECT COUNT(*) FROM power_events WHERE timestamp >= $1", cutoff7Days).Scan(&countLast7Days)
+	h.db.QueryRow("SELECT COUNT(*) FROM power_events WHERE timestamp >= $1", cutoff30Days).Scan(&countLast30Days)
+	h.db.QueryRow("SELECT COUNT(*) FROM power_events WHERE timestamp >= $1", cutoff90Days).Scan(&countLast90Days)
+	
+	stats := gin.H{
+		"total_count": totalCount,
+		"oldest_event": oldestTimestamp,
+		"newest_event": newestTimestamp,
+		"count_last_7_days": countLast7Days,
+		"count_last_30_days": countLast30Days,
+		"count_last_90_days": countLast90Days,
+		"count_older_than_90_days": totalCount - countLast90Days,
+	}
+	
+	c.JSON(http.StatusOK, stats)
+}

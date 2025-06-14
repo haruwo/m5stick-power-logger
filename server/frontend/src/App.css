@@ -645,6 +645,143 @@ body {
   border-bottom: 1px solid #ecf0f1;
 }
 
+/* Event Stats */
+.event-stats {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.stat-number {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.oldest-event-info {
+  text-align: center;
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+/* Cleanup Button */
+.cleanup-btn {
+  background-color: #fd7e14;
+  border-color: #fd7e14;
+  color: white;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.cleanup-btn:hover {
+  background-color: #e8590c;
+  border-color: #e8590c;
+}
+
+/* Header Content Layout */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Cleanup Modal */
+.cleanup-modal-content {
+  padding: 0;
+}
+
+.cleanup-modal-content p {
+  margin-bottom: 1.5rem;
+  color: #495057;
+  line-height: 1.5;
+}
+
+.cleanup-preview {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  margin-bottom: 1.5rem;
+}
+
+.cleanup-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cleanup-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.cleanup-stat .label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.cleanup-stat .value {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.cleanup-stat .value.danger {
+  color: #dc3545;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: white;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .navigation {
