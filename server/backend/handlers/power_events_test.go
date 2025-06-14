@@ -24,13 +24,32 @@ func TestCreatePowerEvent(t *testing.T) {
 
 	// テストデータ
 	req := models.PowerEventRequest{
-		DeviceID:  "device-001",
-		EventType: "power_on",
-		Data:      `{"voltage": 3.3, "current": 0.5}`,
+		DeviceID:           "device-001",
+		Timestamp:          time.Now(),
+		UptimeMs:           1000,
+		EventType:          "power_on",
+		Message:            "Device powered on",
+		BatteryPercentage:  80,
+		BatteryVoltage:     3.3,
+		WiFiSignalStrength: -50,
+		FreeHeap:           100000,
 	}
 
+	// リクエストデータをJSONに変換
+	dataJSON := map[string]interface{}{
+		"client_timestamp":     req.Timestamp,
+		"uptime_ms":            req.UptimeMs,
+		"message":              req.Message,
+		"battery_percentage":   req.BatteryPercentage,
+		"battery_voltage":      req.BatteryVoltage,
+		"wifi_signal_strength": req.WiFiSignalStrength,
+		"free_heap":            req.FreeHeap,
+	}
+	data, err := json.Marshal(dataJSON)
+	assert.NoError(t, err)
+
 	mock.ExpectExec("INSERT INTO power_events").
-		WithArgs(req.DeviceID, req.EventType, req.Data, sqlmock.AnyArg()).
+		WithArgs(req.DeviceID, req.EventType, string(data), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	// デバイスの最終接続時刻を更新
@@ -73,9 +92,31 @@ func TestGetPowerEvents(t *testing.T) {
 
 	// テストデータ
 	now := time.Now()
+	dataJSON1 := map[string]interface{}{
+		"client_timestamp":     now,
+		"uptime_ms":            1000,
+		"message":              "Device powered on",
+		"battery_percentage":   80,
+		"battery_voltage":      3.3,
+		"wifi_signal_strength": -50,
+		"free_heap":            100000,
+	}
+	data1, _ := json.Marshal(dataJSON1)
+
+	dataJSON2 := map[string]interface{}{
+		"client_timestamp":     now,
+		"uptime_ms":            2000,
+		"message":              "Device powered off",
+		"battery_percentage":   75,
+		"battery_voltage":      3.2,
+		"wifi_signal_strength": -55,
+		"free_heap":            95000,
+	}
+	data2, _ := json.Marshal(dataJSON2)
+
 	rows := sqlmock.NewRows([]string{"id", "device_id", "event_type", "timestamp", "data", "created_at"}).
-		AddRow(1, "device-001", "power_on", now, `{"voltage": 3.3}`, now).
-		AddRow(2, "device-001", "power_off", now, `{"voltage": 0.0}`, now)
+		AddRow(1, "device-001", "power_on", now, string(data1), now).
+		AddRow(2, "device-001", "power_off", now, string(data2), now)
 
 	mock.ExpectQuery("SELECT (.+) FROM power_events ORDER BY timestamp DESC").
 		WillReturnRows(rows)
@@ -115,8 +156,19 @@ func TestGetPowerEventByID(t *testing.T) {
 
 	// テストデータ
 	now := time.Now()
+	dataJSON := map[string]interface{}{
+		"client_timestamp":     now,
+		"uptime_ms":            1000,
+		"message":              "Device powered on",
+		"battery_percentage":   80,
+		"battery_voltage":      3.3,
+		"wifi_signal_strength": -50,
+		"free_heap":            100000,
+	}
+	data, _ := json.Marshal(dataJSON)
+
 	rows := sqlmock.NewRows([]string{"id", "device_id", "event_type", "timestamp", "data", "created_at"}).
-		AddRow(1, "device-001", "power_on", now, `{"voltage": 3.3}`, now)
+		AddRow(1, "device-001", "power_on", now, string(data), now)
 
 	mock.ExpectQuery("SELECT (.+) FROM power_events WHERE id = \\$1").
 		WithArgs(1).
@@ -158,9 +210,31 @@ func TestGetDeviceTimeline(t *testing.T) {
 
 	// テストデータ
 	now := time.Now()
+	dataJSON1 := map[string]interface{}{
+		"client_timestamp":     now,
+		"uptime_ms":            1000,
+		"message":              "Device powered on",
+		"battery_percentage":   80,
+		"battery_voltage":      3.3,
+		"wifi_signal_strength": -50,
+		"free_heap":            100000,
+	}
+	data1, _ := json.Marshal(dataJSON1)
+
+	dataJSON2 := map[string]interface{}{
+		"client_timestamp":     now.Add(-time.Hour),
+		"uptime_ms":            2000,
+		"message":              "Device powered off",
+		"battery_percentage":   75,
+		"battery_voltage":      3.2,
+		"wifi_signal_strength": -55,
+		"free_heap":            95000,
+	}
+	data2, _ := json.Marshal(dataJSON2)
+
 	rows := sqlmock.NewRows([]string{"id", "device_id", "event_type", "timestamp", "data", "created_at"}).
-		AddRow(1, "device-001", "power_on", now, `{"voltage": 3.3}`, now).
-		AddRow(2, "device-001", "power_off", now.Add(-time.Hour), `{"voltage": 0.0}`, now.Add(-time.Hour))
+		AddRow(1, "device-001", "power_on", now, string(data1), now).
+		AddRow(2, "device-001", "power_off", now.Add(-time.Hour), string(data2), now.Add(-time.Hour))
 
 	mock.ExpectQuery("SELECT (.+) FROM power_events WHERE device_id = \\$1 ORDER BY timestamp DESC").
 		WithArgs("device-001").
