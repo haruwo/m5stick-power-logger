@@ -15,7 +15,6 @@
     "moment": "^2.29.4",
     "react-calendar": "^4.6.0",
     "recharts": "^2.8.0",
-    "react-timeline-slider": "^1.2.1",
     "@mui/material": "^5.15.0",
     "@mui/icons-material": "^5.15.0",
     "@emotion/react": "^11.11.1",

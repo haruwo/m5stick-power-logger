@@ -1,0 +1,31 @@
+{
+  "name": "m5stick-power-logger-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end tests for M5StickC Power Logger",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:docker": "docker-compose -f docker-compose.e2e.yml up --build --abort-on-container-exit",
+    "setup": "playwright install",
+    "report": "playwright show-report"
+  },
+  "keywords": [
+    "e2e",
+    "playwright",
+    "testing",
+    "m5stick",
+    "power-logger"
+  ],
+  "author": "M5StickC Power Logger",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
