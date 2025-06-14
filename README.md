@@ -16,14 +16,8 @@
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   M5StickC      │───▶│   Backend       │───▶│   PostgreSQL    │
-│   Plus2         │    │   (Node.js)     │    │   Database      │
+│   Plus2         │    │   (go)          │    │   Database      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │◄───│     Nginx       │
-│   (React)       │    │   Reverse Proxy │
-└─────────────────┘    └─────────────────┘
 ```
 
 ## クイックスタート
@@ -98,27 +92,3 @@ GET /api/analytics/timeline
 GET /api/analytics/device/:deviceId/health
 ```
 
-## 開発環境セットアップ
-
-### バックエンド開発
-
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-### フロントエンド開発
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-### データベース
-
-```bash
-# PostgreSQL接続
-docker exec -it m5stick-postgres psql -U power_logger_user -d power_logger
-```
