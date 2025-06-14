@@ -16,7 +16,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "react-big-calendar": "^1.8.2",
-    "react-gantt-timeline": "^0.4.3",
+    "@svar/gantt": "^1.0.0",
     "moment": "^2.29.4",
     "date-fns": "^2.30.0",
     "react-datepicker": "^4.16.0",
