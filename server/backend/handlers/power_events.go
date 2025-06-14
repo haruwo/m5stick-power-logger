@@ -43,16 +43,6 @@ func (h *PowerEventHandler) CreatePowerEvent(c *gin.Context) {
 		return
 	}
 
-	// 電源イベントを挿入 (Use server timestamp)
-	_, err = h.db.Exec(
-		"INSERT INTO power_events (device_id, event_type, data, timestamp) VALUES ($1, $2, $3, $4)",
-		req.DeviceID, req.EventType, string(dataBytes), time.Now(),
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create power event"})
-		return
-	}
-
 	// デバイスの最終接続時刻を更新（UPSERT）
 	_, err = h.db.Exec(`
 		INSERT INTO devices (id, name, description, last_seen, created_at, updated_at) 
@@ -63,6 +53,16 @@ func (h *PowerEventHandler) CreatePowerEvent(c *gin.Context) {
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update device"})
+		return
+	}
+
+	// 電源イベントを挿入 (Use server timestamp)
+	_, err = h.db.Exec(
+		"INSERT INTO power_events (device_id, event_type, data, timestamp) VALUES ($1, $2, $3, $4)",
+		req.DeviceID, req.EventType, string(dataBytes), time.Now(),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create power event"})
 		return
 	}
 
