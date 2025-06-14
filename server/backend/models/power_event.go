@@ -21,15 +21,15 @@ type Device struct {
 }
 
 type PowerEventRequest struct {
-	DeviceID            string    `json:"device_id" binding:"required"`
-	Timestamp           time.Time `json:"timestamp" binding:"required"`
-	UptimeMs            int64     `json:"uptime_ms" binding:"required"`
-	EventType           string    `json:"event_type" binding:"required"`
-	Message             string    `json:"message" binding:"required"`
-	BatteryPercentage   int       `json:"battery_percentage" binding:"required"`
-	BatteryVoltage      float64   `json:"battery_voltage" binding:"required"`
-	WiFiSignalStrength  int       `json:"wifi_signal_strength" binding:"required"`
-	FreeHeap            int64     `json:"free_heap" binding:"required"`
+	DeviceID           string    `json:"device_id" binding:"required"`
+	Timestamp          time.Time `json:"timestamp"`
+	UptimeMs           int64     `json:"uptime_ms" binding:"required"`
+	EventType          string    `json:"event_type" binding:"required"`
+	Message            string    `json:"message" binding:"required"`
+	BatteryPercentage  int       `json:"battery_percentage" binding:"required"`
+	BatteryVoltage     float64   `json:"battery_voltage" binding:"required"`
+	WiFiSignalStrength int       `json:"wifi_signal_strength" binding:"required"`
+	FreeHeap           int64     `json:"free_heap" binding:"required"`
 }
 
 type DeviceUpdateRequest struct {
