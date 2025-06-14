@@ -36,6 +36,8 @@ bool PowerLogger::begin()
     // Record boot time
     m_bootTime = millis();
 
+    M5.Axp.begin();
+
     // Initialize power state
     m_lastPowerState = (getBatteryVoltage() > 4.0f); // Rough USB power detection
 
@@ -102,7 +104,7 @@ bool PowerLogger::logPowerEvent(PowerEventType eventType, const String &message)
     }
 
     // Create JSON payload
-    DynamicJsonDocument doc(JSON_BUFFER_SIZE);
+    JsonDocument doc;
     if (!createEventJson(doc, eventType, message))
     {
         logMessage(LOG_LEVEL_ERROR, "Failed to create event JSON");
@@ -264,8 +266,7 @@ void PowerLogger::setSystemStatus(SystemStatus status)
 
 float PowerLogger::getBatteryVoltage()
 {
-    // M5StickC Plus2 specific implementation
-    return analogRead(35) * 2 * 3.3f / 4095.0f; // Approximate voltage divider
+    return M5.Axp.GetBatVoltage();
 }
 
 uint8_t PowerLogger::getBatteryPercentage()
@@ -291,7 +292,7 @@ String PowerLogger::getDeviceId() const
 
 String PowerLogger::getDeviceInfo()
 {
-    DynamicJsonDocument doc(512);
+    JsonDocument doc;
 
     doc["device_id"] = m_config.deviceId;
     doc["model"] = DEVICE_MODEL;
@@ -395,7 +396,7 @@ bool PowerLogger::validateConfig()
 
 String PowerLogger::generateEventPayload(PowerEventType eventType, const String &message)
 {
-    DynamicJsonDocument doc(JSON_BUFFER_SIZE);
+    JsonDocument doc;
     createEventJson(doc, eventType, message);
 
     String result;

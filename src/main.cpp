@@ -1,4 +1,4 @@
-#include <M5StickCPlus2.h>
+#include <M5StickCPlus.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
 #include "config.h"
@@ -51,7 +51,7 @@ void drawDeviceId();
 
 void setup()
 {
-    // Initialize M5StickC Plus2
+    // Initialize M5StickC Plus
     M5.begin();
 
     // Initialize serial communication
@@ -62,7 +62,7 @@ void setup()
     }
 
     Serial.println("====================================");
-    Serial.println("M5StickC Plus2 Power Logger v" + String(FIRMWARE_VERSION));
+    Serial.println("M5StickC Plus Power Logger v" + String(FIRMWARE_VERSION));
     Serial.println("Device Model: " + String(DEVICE_MODEL));
     Serial.println("====================================");
 
@@ -170,7 +170,7 @@ void initializeDisplay()
     M5.Lcd.setCursor(0, 0);
 
     // Set initial brightness
-    M5.Display.setBrightness(displayBrightness);
+    M5.Axp.ScreenBreath(displayBrightness);
 
     Serial.println("Display initialized");
 }
@@ -273,17 +273,18 @@ void handleButtons()
         }
     }
 
-    // Power button (long press for deep sleep)
-    if (M5.BtnPWR.wasPressed())
+    // Power button (long press for deep sleep) - Only available on M5StickC Plus2
+    // For M5StickC Plus, use combination of A+B buttons for deep sleep
+    if (M5.BtnA.isPressed() && M5.BtnB.isPressed())
     {
         unsigned long now = millis();
         if (now - lastButtonPress >= BUTTON_DEBOUNCE_MS)
         {
             lastButtonPress = now;
 
-            // Check for long press
+            // Check for long press of both buttons
             unsigned long pressStart = millis();
-            while (M5.BtnPWR.isPressed() && (millis() - pressStart < 2000))
+            while (M5.BtnA.isPressed() && M5.BtnB.isPressed() && (millis() - pressStart < 2000))
             {
                 delay(10);
                 M5.update();
@@ -371,7 +372,7 @@ void drawStatusScreen()
     // Instructions
     M5.Lcd.setCursor(5, 115);
     M5.Lcd.setTextColor(CYAN, BLACK);
-    M5.Lcd.println("A:Test B:Sleep PWR:Deep");
+    M5.Lcd.println("A:Test B:Sleep A+B:Deep");
 }
 
 void drawInfoScreen()
@@ -507,7 +508,7 @@ void showBootScreen()
     M5.Lcd.setTextSize(1);
 
     M5.Lcd.setCursor(20, 30);
-    M5.Lcd.println("M5StickC Plus2");
+    M5.Lcd.println("M5StickC Plus");
 
     M5.Lcd.setCursor(25, 50);
     M5.Lcd.println("Power Logger");
@@ -538,12 +539,12 @@ void toggleDisplay()
     displayOn = !displayOn;
     if (displayOn)
     {
-        M5.Display.setBrightness(displayBrightness);
+        M5.Axp.ScreenBreath(displayBrightness);
         updateDisplay();
     }
     else
     {
-        M5.Display.setBrightness(0);
+        M5.Axp.ScreenBreath(0);
         M5.Lcd.fillScreen(BLACK);
     }
 }
