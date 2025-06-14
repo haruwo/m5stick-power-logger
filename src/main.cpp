@@ -150,6 +150,7 @@ void initializeConfig()
     deviceConfig.httpRetryAttempts = HTTP_RETRY_ATTEMPTS;
     deviceConfig.httpRetryDelay = HTTP_RETRY_DELAY_MS;
     deviceConfig.powerCheckInterval = POWER_CHECK_INTERVAL_MS;
+    deviceConfig.periodicEventInterval = PERIODIC_EVENT_INTERVAL_MS;
     deviceConfig.batteryLowThreshold = BATTERY_LOW_THRESHOLD;
     deviceConfig.logLevel = LOG_LEVEL;
 

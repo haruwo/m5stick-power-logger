@@ -29,6 +29,7 @@
 #define POWER_CHECK_INTERVAL_MS 1000
 #define BATTERY_LOW_THRESHOLD 20
 #define DEEP_SLEEP_DURATION_US 60000000 // 60 seconds
+#define PERIODIC_EVENT_INTERVAL_MS 60000 // 1 minute
 
 // Logging Configuration
 #define LOG_LEVEL_DEBUG 4
@@ -52,7 +53,8 @@ enum class PowerEventType {
     POWER_OFF,
     BATTERY_LOW,
     SYSTEM_ERROR,
-    WIFI_RECONNECTED
+    WIFI_RECONNECTED,
+    PERIODIC_STATUS
 };
 
 // System Status
@@ -78,6 +80,7 @@ struct DeviceConfig {
     uint8_t httpRetryAttempts;
     uint16_t httpRetryDelay;
     uint32_t powerCheckInterval;
+    uint32_t periodicEventInterval;
     uint8_t batteryLowThreshold;
     uint8_t logLevel;
 };

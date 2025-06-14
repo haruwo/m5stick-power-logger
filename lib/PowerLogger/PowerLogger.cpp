@@ -4,7 +4,7 @@
 #include <esp_system.h>
 
 PowerLogger::PowerLogger(const DeviceConfig &config)
-    : m_config(config), m_systemStatus(SystemStatus::INITIALIZING), m_lastWiFiCheck(0), m_lastBatteryCheck(0), m_lastHttpRetry(0), m_bootTime(0), m_isInitialized(false), m_wifiConnected(false), m_httpRetryCount(0), m_lastBatteryVoltage(0.0f), m_lastPowerState(false)
+    : m_config(config), m_systemStatus(SystemStatus::INITIALIZING), m_lastWiFiCheck(0), m_lastBatteryCheck(0), m_lastHttpRetry(0), m_lastPeriodicEvent(0), m_bootTime(0), m_isInitialized(false), m_wifiConnected(false), m_httpRetryCount(0), m_lastBatteryVoltage(0.0f), m_lastPowerState(false)
 {
 
     logMessage(LOG_LEVEL_INFO, "PowerLogger initialized");
@@ -84,6 +84,14 @@ void PowerLogger::loop()
         bool currentPowerState = (getBatteryVoltage() > 4.0f);
         processPowerStateChange(currentPowerState);
         m_lastPowerState = currentPowerState;
+    }
+
+    // Send periodic status events when WiFi is connected
+    if (isWiFiConnected() && (currentTime - m_lastPeriodicEvent >= m_config.periodicEventInterval))
+    {
+        logMessage(LOG_LEVEL_INFO, "Sending periodic status event");
+        logPowerEvent(PowerEventType::PERIODIC_STATUS, "Periodic status update");
+        m_lastPeriodicEvent = currentTime;
     }
 
     // Handle WiFi events
@@ -519,6 +527,9 @@ bool PowerLogger::createEventJson(JsonDocument &doc, PowerEventType eventType, c
         break;
     case PowerEventType::WIFI_RECONNECTED:
         doc["event_type"] = "wifi_reconnected";
+        break;
+    case PowerEventType::PERIODIC_STATUS:
+        doc["event_type"] = "periodic_status";
         break;
     default:
         doc["event_type"] = "unknown";

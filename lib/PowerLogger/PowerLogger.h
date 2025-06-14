@@ -65,6 +65,7 @@ private:
     unsigned long m_lastWiFiCheck;
     unsigned long m_lastBatteryCheck;
     unsigned long m_lastHttpRetry;
+    unsigned long m_lastPeriodicEvent;
     unsigned long m_bootTime;
     
     // State variables

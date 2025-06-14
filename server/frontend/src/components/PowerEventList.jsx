@@ -31,7 +31,9 @@ function PowerEventList() {
       'power_on': '電源ON',
       'power_off': '電源OFF',
       'battery_low': 'バッテリー低下',
-      'system_error': 'システムエラー'
+      'system_error': 'システムエラー',
+      'wifi_reconnected': 'WiFi再接続',
+      'periodic_status': 'ステータス更新'
     };
     return labels[eventType] || eventType;
   };
@@ -41,7 +43,9 @@ function PowerEventList() {
       'power_on': 'event-power-on',
       'power_off': 'event-power-off',
       'battery_low': 'event-battery-low',
-      'system_error': 'event-system-error'
+      'system_error': 'event-system-error',
+      'wifi_reconnected': 'event-wifi-reconnected',
+      'periodic_status': 'event-periodic-status'
     };
     return classes[eventType] || 'event-default';
   };
