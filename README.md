@@ -92,3 +92,44 @@ GET /api/analytics/timeline
 GET /api/analytics/device/:deviceId/health
 ```
 
+## APIデータ形式
+
+### 電源イベント POST データ
+
+M5StickC Plus2デバイスから送信されるJSONデータの形式:
+
+```json
+{
+  "device_id": "m5stick-a1b2c3d4",
+  "timestamp": "2024-01-15T10:30:45Z",
+  "uptime_ms": 123456,
+  "event_type": "power_on",
+  "message": "External power connected",
+  "battery_percentage": 85,
+  "battery_voltage": 4.12,
+  "wifi_signal_strength": -45,
+  "free_heap": 234567
+}
+```
+
+#### フィールド説明
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `device_id` | string | デバイスの一意識別子 (例: "m5stick-a1b2c3d4") |
+| `timestamp` | string | イベント発生時刻 (ISO 8601形式) |
+| `uptime_ms` | number | デバイス起動からの経過時間（ミリ秒） |
+| `event_type` | string | イベントタイプ: "power_on", "power_off", "battery_low", "system_error" |
+| `message` | string | イベントの詳細メッセージ |
+| `battery_percentage` | number | バッテリー残量（パーセント） |
+| `battery_voltage` | number | バッテリー電圧（ボルト） |
+| `wifi_signal_strength` | number | WiFi信号強度（dBm） |
+| `free_heap` | number | 利用可能なヒープメモリ（バイト） |
+
+#### イベントタイプ
+
+- `power_on`: 外部電源接続時
+- `power_off`: 外部電源切断時  
+- `battery_low`: バッテリー残量低下時
+- `system_error`: システムエラー発生時
+
