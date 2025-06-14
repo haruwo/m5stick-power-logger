@@ -372,6 +372,16 @@ body {
   box-shadow: 0 0 0 2px #8e44ad;
 }
 
+.event-wifi-reconnected .event-marker {
+  background-color: #17a2b8;
+  box-shadow: 0 0 0 2px #17a2b8;
+}
+
+.event-periodic-status .event-marker {
+  background-color: #6c757d;
+  box-shadow: 0 0 0 2px #6c757d;
+}
+
 .event-content {
   background: #f8f9fa;
   padding: 1.5rem;
@@ -393,6 +403,14 @@ body {
 
 .event-system-error .event-content {
   border-left-color: #8e44ad;
+}
+
+.event-wifi-reconnected .event-content {
+  border-left-color: #17a2b8;
+}
+
+.event-periodic-status .event-content {
+  border-left-color: #6c757d;
 }
 
 .event-header {
@@ -425,6 +443,14 @@ body {
 
 .event-system-error .event-type {
   background-color: #8e44ad;
+}
+
+.event-wifi-reconnected .event-type {
+  background-color: #17a2b8;
+}
+
+.event-periodic-status .event-type {
+  background-color: #6c757d;
 }
 
 .event-data {
@@ -592,6 +618,16 @@ body {
 .event-system-error .event-type-label {
   background-color: #e8d5e8;
   color: #8e44ad;
+}
+
+.event-wifi-reconnected .event-type-label {
+  background-color: #d1ecf1;
+  color: #17a2b8;
+}
+
+.event-periodic-status .event-type-label {
+  background-color: #f8f9fa;
+  color: #6c757d;
 }
 
 /* Event Data in Tables */
