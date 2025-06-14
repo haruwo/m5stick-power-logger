@@ -25,3 +25,8 @@ type PowerEventRequest struct {
 	EventType string `json:"event_type" binding:"required"`
 	Data      string `json:"data,omitempty"`
 }
+
+type DeviceUpdateRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}

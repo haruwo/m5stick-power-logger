@@ -51,7 +51,8 @@ enum class PowerEventType {
     POWER_ON,
     POWER_OFF,
     BATTERY_LOW,
-    SYSTEM_ERROR
+    SYSTEM_ERROR,
+    WIFI_RECONNECTED
 };
 
 // System Status

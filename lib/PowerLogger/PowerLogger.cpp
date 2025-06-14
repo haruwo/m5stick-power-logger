@@ -145,6 +145,11 @@ bool PowerLogger::connectWiFi() {
             m_onWiFiConnected();
         }
         
+        // Send WiFi reconnection status event
+        logPowerEvent(PowerEventType::WIFI_RECONNECTED, 
+                     "WiFi connected - IP: " + getLocalIP() + 
+                     ", RSSI: " + String(getSignalStrength()) + " dBm");
+        
         return true;
     } else {
         setSystemStatus(SystemStatus::WIFI_DISCONNECTED);
@@ -431,6 +436,9 @@ bool PowerLogger::createEventJson(JsonDocument& doc, PowerEventType eventType, c
             break;
         case PowerEventType::SYSTEM_ERROR:
             doc["event_type"] = "system_error";
+            break;
+        case PowerEventType::WIFI_RECONNECTED:
+            doc["event_type"] = "wifi_reconnected";
             break;
         default:
             doc["event_type"] = "unknown";
