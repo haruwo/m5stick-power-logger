@@ -1,65 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';
+import Dashboard from './components/Dashboard';
+import DeviceList from './components/DeviceList';
+import DeviceDetail from './components/DeviceDetail';
+import DeviceTimeline from './components/DeviceTimeline';
+import PowerEventList from './components/PowerEventList';
+import LegacyItems from './components/LegacyItems';
 import './App.css';
 
 function App() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    try {
-      const response = await fetch('/api/v1/items');
-      if (!response.ok) {
-        throw new Error('Failed to fetch items');
-      }
-      const data = await response.json();
-      setItems(data || []);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="loading">Loading...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Items List</h1>
-      </header>
-      <main>
-        {items.length === 0 ? (
-          <p>No items found</p>
-        ) : (
-          <table className="items-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Created At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(item => (
-                <tr key={item.id}>
-                  <td>{item.id}</td>
-                  <td>{item.name}</td>
-                  <td>{item.description}</td>
-                  <td>{new Date(item.created_at).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </main>
-    </div>
+    <Router>
+      <div className="App">
+        <Navigation />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/devices" element={<DeviceList />} />
+            <Route path="/devices/:deviceId" element={<DeviceDetail />} />
+            <Route path="/devices/:deviceId/timeline" element={<DeviceTimeline />} />
+            <Route path="/events" element={<PowerEventList />} />
+            <Route path="/legacy" element={<LegacyItems />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
 
