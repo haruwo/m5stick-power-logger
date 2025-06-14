@@ -48,8 +48,8 @@ ON CONFLICT DO NOTHING;
 
 -- サンプル電源イベントデータ
 INSERT INTO power_events (device_id, event_type, data) VALUES
-    ('m5stick-sample-001', 'power_on', '{"voltage": 3.3, "current": 0.5, "battery_percentage": 85}'),
-    ('m5stick-sample-001', 'power_off', '{"voltage": 0.0, "current": 0.0, "battery_percentage": 83}'),
-    ('m5stick-sample-002', 'power_on', '{"voltage": 3.2, "current": 0.4, "battery_percentage": 92}'),
-    ('m5stick-sample-002', 'battery_low', '{"voltage": 3.1, "current": 0.3, "battery_percentage": 15}')
+    ('m5stick-sample-001', 'power_on', '{"client_timestamp": "2024-01-01T09:00:00Z", "uptime_ms": 5000, "message": "Device powered on", "battery_percentage": 85, "battery_voltage": 3.3, "wifi_signal_strength": -45, "free_heap": 32768}'),
+    ('m5stick-sample-001', 'power_off', '{"client_timestamp": "2024-01-01T17:30:00Z", "uptime_ms": 30600000, "message": "Device shutting down", "battery_percentage": 83, "battery_voltage": 3.2, "wifi_signal_strength": -50, "free_heap": 31024}'),
+    ('m5stick-sample-002', 'power_on', '{"client_timestamp": "2024-01-01T08:45:00Z", "uptime_ms": 3000, "message": "System startup", "battery_percentage": 92, "battery_voltage": 3.4, "wifi_signal_strength": -40, "free_heap": 33024}'),
+    ('m5stick-sample-002', 'battery_low', '{"client_timestamp": "2024-01-01T20:15:00Z", "uptime_ms": 41700000, "message": "Battery level critical", "battery_percentage": 15, "battery_voltage": 3.1, "wifi_signal_strength": -55, "free_heap": 29568}')
 ON CONFLICT DO NOTHING;
