@@ -421,7 +421,7 @@ int32_t PowerLogger::getSignalStrength() {
 
 bool PowerLogger::createEventJson(JsonDocument& doc, PowerEventType eventType, const String& message) {
     doc["device_id"] = m_config.deviceId;
-    doc["timestamp"] = getCurrentTimestamp();
+    //doc["timestamp"] = getCurrentTimestamp();
     doc["uptime_ms"] = millis() - m_bootTime;
     
     switch (eventType) {
